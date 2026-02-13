@@ -1,9 +1,8 @@
 import json
 import logging
-from typing import Literal
 
 from mcp.server.fastmcp import Context, FastMCP
-from mcp.types import ImageContent, TextContent
+from mcp.types import TextContent
 
 from ..connection import get_freecad_connection
 
@@ -39,30 +38,6 @@ def register_tools(mcp: FastMCP) -> None:
             return [
                 TextContent(type="text", text=f"Failed to execute code: {str(e)}")
             ]
-
-    @mcp.tool()
-    def get_view(
-        ctx: Context,
-        view_name: Literal["Current", "Isometric", "Front", "Top", "Right", "Back", "Left", "Bottom", "Dimetric", "Trimetric"] = "Current",
-        width: int | None = None,
-        height: int | None = None,
-        focus_object: str | None = None,
-    ) -> list[ImageContent | TextContent]:
-        """Get a screenshot of the active view.
-
-        Args:
-            view_name: The camera angle. Use "Current" (default) to capture without changing the user's view.
-            width: Image width in pixels (default 800).
-            height: Image height in pixels (default 600).
-            focus_object: Optional object name to focus/zoom on.
-        """
-        freecad = get_freecad_connection()
-        screenshot = freecad.get_active_screenshot(view_name, width, height, focus_object)
-
-        if screenshot is not None:
-            return [ImageContent(type="image", data=screenshot, mimeType="image/png")]
-        else:
-            return [TextContent(type="text", text="Cannot get screenshot in the current view type (such as TechDraw or Spreadsheet)")]
 
     @mcp.tool()
     def insert_part_from_library(ctx: Context, relative_path: str) -> list[TextContent]:

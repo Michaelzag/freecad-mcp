@@ -55,8 +55,8 @@ Follow the standard PartDesign iterative loop to create parts:
 6. INSPECT:
    - get_body_features() to see the full feature tree of a Body.
    - get_sketch_info() to read a sketch's geometry and constraints.
+   - get_sketch_diagnostics() to check degrees of freedom and constraint conflicts.
    - get_object() / get_objects() for detailed object properties.
-   - get_view() only when you need a visual screenshot.
 
 Use execute_code() as an escape hatch for operations not covered by the tools above.
 """

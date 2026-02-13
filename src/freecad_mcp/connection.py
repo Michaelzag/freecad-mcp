@@ -106,50 +106,6 @@ class FreeCADConnection:
     def execute_code(self, code: str) -> dict[str, Any]:
         return cast(dict[str, Any], self.server.execute_code(code))
 
-    def get_active_screenshot(
-        self,
-        view_name: str = "Current",
-        width: int | None = None,
-        height: int | None = None,
-        focus_object: str | None = None,
-    ) -> str | None:
-        try:
-            result = cast(
-                dict[str, Any],
-                self.server.execute_code(
-                """
-import FreeCAD
-import FreeCADGui
-
-if FreeCAD.Gui.ActiveDocument and FreeCAD.Gui.ActiveDocument.ActiveView:
-    view_type = type(FreeCAD.Gui.ActiveDocument.ActiveView).__name__
-
-    unsupported_views = ['SpreadsheetGui::SheetView', 'DrawingGui::DrawingView', 'TechDrawGui::MDIViewPage']
-
-    if view_type in unsupported_views or not hasattr(FreeCAD.Gui.ActiveDocument.ActiveView, 'saveImage'):
-        print('Current view does not support screenshots')
-        False
-    else:
-        print(f'Current view supports screenshots: {view_type}')
-        True
-else:
-    print('No active view')
-    False
-"""
-                ),
-            )
-
-            if not result.get("success", False) or "Current view does not support screenshots" in (
-                result.get("data") or {}
-            ).get("output", ""):
-                logger.info("Screenshot unavailable in current view (likely Spreadsheet or TechDraw view)")
-                return None
-
-            return cast(str | None, self.server.get_active_screenshot(view_name, width, height, focus_object))
-        except Exception as e:
-            logger.error(f"Error getting screenshot: {e}")
-            return None
-
     def get_objects(self, doc_name: str) -> dict[str, Any]:
         return cast(dict[str, Any], self.server.get_objects(doc_name))
 
