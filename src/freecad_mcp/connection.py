@@ -55,8 +55,44 @@ class FreeCADConnection:
             self.server.get_sketch_diagnostics(doc_name, sketch_name),
         )
 
+    def get_sketch_info(
+        self, doc_name: str, sketch_name: str
+    ) -> dict[str, Any]:
+        return cast(
+            dict[str, Any],
+            self.server.get_sketch_info(doc_name, sketch_name),
+        )
+
     def recompute_document(self, doc_name: str) -> dict[str, Any]:
         return cast(dict[str, Any], self.server.recompute_document(doc_name))
+
+    def pad(
+        self, doc_name: str, body_name: str, sketch_name: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        return cast(dict[str, Any], self.server.pad(doc_name, body_name, sketch_name, params))
+
+    def pocket(
+        self, doc_name: str, body_name: str, sketch_name: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        return cast(dict[str, Any], self.server.pocket(doc_name, body_name, sketch_name, params))
+
+    def revolve(
+        self, doc_name: str, body_name: str, sketch_name: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        return cast(dict[str, Any], self.server.revolve(doc_name, body_name, sketch_name, params))
+
+    def fillet(
+        self, doc_name: str, body_name: str, feature_name: str, edges: list[str], params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        return cast(dict[str, Any], self.server.fillet(doc_name, body_name, feature_name, edges, params))
+
+    def chamfer(
+        self, doc_name: str, body_name: str, feature_name: str, edges: list[str], params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        return cast(dict[str, Any], self.server.chamfer(doc_name, body_name, feature_name, edges, params))
+
+    def get_body_features(self, doc_name: str, body_name: str) -> dict[str, Any]:
+        return cast(dict[str, Any], self.server.get_body_features(doc_name, body_name))
 
     def edit_object(self, doc_name: str, obj_name: str, obj_data: dict[str, Any]) -> dict[str, Any]:
         return cast(dict[str, Any], self.server.edit_object(doc_name, obj_name, obj_data))
@@ -72,7 +108,7 @@ class FreeCADConnection:
 
     def get_active_screenshot(
         self,
-        view_name: str = "Isometric",
+        view_name: str = "Current",
         width: int | None = None,
         height: int | None = None,
         focus_object: str | None = None,

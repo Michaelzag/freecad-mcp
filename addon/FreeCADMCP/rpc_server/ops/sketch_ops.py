@@ -2,8 +2,20 @@ import math
 from typing import Any
 
 import FreeCAD
-import Part
-import Sketcher
+
+from ..serialize import serialize_value
+
+
+def _import_part_module():
+    import Part
+
+    return Part
+
+
+def _import_sketcher_module():
+    import Sketcher
+
+    return Sketcher
 
 
 def _to_vector(raw: Any, default_z: float = 0.0) -> FreeCAD.Vector:
@@ -129,6 +141,8 @@ def add_sketch_geometry_gui(doc_name: str, sketch_name: str, geometry: dict[str,
         return f"Sketch '{sketch_name}' not found in document '{doc_name}'."
 
     try:
+        Part = _import_part_module()
+
         g_type = str(geometry.get("type", "")).lower()
         construction = bool(geometry.get("construction", False))
         geometry_ids: list[int] = []
@@ -257,6 +271,8 @@ def add_sketch_constraint_gui(doc_name: str, sketch_name: str, constraint: dict[
         return f"Sketch '{sketch_name}' not found in document '{doc_name}'."
 
     try:
+        Sketcher = _import_sketcher_module()
+
         constraint_type = constraint.get("type")
         if not constraint_type:
             raise ValueError("Constraint payload requires 'type'.")
@@ -298,13 +314,12 @@ def get_sketch_diagnostics_gui(doc_name: str, sketch_name: str):
         return f"Sketch '{sketch_name}' not found in document '{doc_name}'."
 
     try:
+        dof = None
         if hasattr(sketch, "solve"):
             try:
-                sketch.solve()
+                dof = sketch.solve()
             except Exception:
                 pass
-
-        dof = getattr(sketch, "DegreeOfFreedom", None)
 
         conflicting: list[Any] = []
         redundant: list[Any] = []
@@ -327,6 +342,110 @@ def get_sketch_diagnostics_gui(doc_name: str, sketch_name: str):
             "open_profiles": open_profiles,
             "geometry_count": len(getattr(sketch, "Geometry", [])),
             "constraint_count": len(getattr(sketch, "Constraints", [])),
+        }
+    except Exception as e:
+        return str(e)
+
+
+def _serialize_geometry(geo: Any, index: int) -> dict[str, Any]:
+    Part = _import_part_module()
+    construction = getattr(geo, "Construction", False)
+    base: dict[str, Any] = {"id": index, "construction": bool(construction)}
+
+    if isinstance(geo, Part.LineSegment):
+        base["type"] = "line"
+        base["start"] = serialize_value(geo.StartPoint)
+        base["end"] = serialize_value(geo.EndPoint)
+    elif isinstance(geo, Part.ArcOfCircle):
+        base["type"] = "arc"
+        base["center"] = serialize_value(geo.Center)
+        base["radius"] = geo.Radius
+        base["start_angle_deg"] = math.degrees(geo.FirstParameter)
+        base["end_angle_deg"] = math.degrees(geo.LastParameter)
+        base["start_point"] = serialize_value(geo.StartPoint)
+        base["end_point"] = serialize_value(geo.EndPoint)
+    elif isinstance(geo, Part.Circle):
+        base["type"] = "circle"
+        base["center"] = serialize_value(geo.Center)
+        base["radius"] = geo.Radius
+    elif isinstance(geo, Part.ArcOfEllipse):
+        base["type"] = "arc_of_ellipse"
+        base["center"] = serialize_value(geo.Center)
+        base["major_radius"] = geo.MajorRadius
+        base["minor_radius"] = geo.MinorRadius
+        base["start_angle_deg"] = math.degrees(geo.FirstParameter)
+        base["end_angle_deg"] = math.degrees(geo.LastParameter)
+    elif isinstance(geo, Part.Ellipse):
+        base["type"] = "ellipse"
+        base["center"] = serialize_value(geo.Center)
+        base["major_radius"] = geo.MajorRadius
+        base["minor_radius"] = geo.MinorRadius
+    elif isinstance(geo, Part.Point):
+        base["type"] = "point"
+        vec = getattr(geo, "Point", None) or FreeCAD.Vector(geo.X, geo.Y, geo.Z)
+        base["point"] = serialize_value(vec)
+    elif isinstance(geo, Part.BSplineCurve):
+        base["type"] = "bspline"
+        base["degree"] = geo.Degree
+        base["poles"] = [serialize_value(p) for p in geo.getPoles()]
+        base["knots"] = list(geo.getKnots())
+    else:
+        base["type"] = "unknown"
+        base["description"] = str(type(geo).__name__)
+
+    return base
+
+
+_CONSTRAINT_UNUSED_REF = -2000
+
+
+def _serialize_constraint(con: Any, index: int) -> dict[str, Any]:
+    first = getattr(con, "First", _CONSTRAINT_UNUSED_REF)
+    second = getattr(con, "Second", _CONSTRAINT_UNUSED_REF)
+    third = getattr(con, "Third", _CONSTRAINT_UNUSED_REF)
+
+    return {
+        "id": index,
+        "type": getattr(con, "Type", "Unknown"),
+        "first": first if first != _CONSTRAINT_UNUSED_REF else None,
+        "first_pos": getattr(con, "FirstPos", 0),
+        "second": second if second != _CONSTRAINT_UNUSED_REF else None,
+        "second_pos": getattr(con, "SecondPos", 0),
+        "third": third if third != _CONSTRAINT_UNUSED_REF else None,
+        "third_pos": getattr(con, "ThirdPos", 0),
+        "value": getattr(con, "Value", None),
+        "name": getattr(con, "Name", ""),
+    }
+
+
+def get_sketch_info_gui(doc_name: str, sketch_name: str):
+    doc = FreeCAD.getDocument(doc_name)
+    if not doc:
+        return f"Document '{doc_name}' not found."
+
+    sketch = doc.getObject(sketch_name)
+    if not sketch:
+        return f"Sketch '{sketch_name}' not found in document '{doc_name}'."
+
+    try:
+        dof = None
+        if hasattr(sketch, "solve"):
+            try:
+                dof = sketch.solve()
+            except Exception:
+                pass
+
+        geometry_list = getattr(sketch, "Geometry", [])
+        constraint_list = getattr(sketch, "Constraints", [])
+
+        return {
+            "sketch_name": sketch.Name,
+            "placement": serialize_value(sketch.Placement),
+            "dof": dof,
+            "geometry_count": len(geometry_list),
+            "constraint_count": len(constraint_list),
+            "geometry": [_serialize_geometry(g, i) for i, g in enumerate(geometry_list)],
+            "constraints": [_serialize_constraint(c, i) for i, c in enumerate(constraint_list)],
         }
     except Exception as e:
         return str(e)

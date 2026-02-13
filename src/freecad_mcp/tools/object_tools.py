@@ -3,10 +3,9 @@ import logging
 from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP
-from mcp.types import ImageContent, TextContent
+from mcp.types import TextContent
 
 from ..connection import get_freecad_connection
-from .common import add_screenshot_if_available
 
 
 logger = logging.getLogger("FreeCADMCPserver")
@@ -56,7 +55,7 @@ def register_tools(mcp: FastMCP) -> None:
         obj_name: str,
         analysis_name: str | None = None,
         obj_properties: dict[str, Any] | None = None,
-    ) -> list[TextContent | ImageContent]:
+    ) -> list[TextContent]:
         """Create a new object in FreeCAD.
         Object type is starts with "Part::" or "Draft::" or "PartDesign::" or "Fem::".
 
@@ -67,24 +66,21 @@ def register_tools(mcp: FastMCP) -> None:
             obj_properties: The properties of the object to create.
 
         Returns:
-            A message indicating the success or failure of the object creation and a screenshot of the object.
+            A message indicating the success or failure of the object creation.
         """
         freecad = get_freecad_connection()
         try:
             obj_data = {"Name": obj_name, "Type": obj_type, "Properties": obj_properties or {}, "Analysis": analysis_name}
             res = freecad.create_object(doc_name, obj_data)
-            screenshot = freecad.get_active_screenshot()
 
             if res["success"]:
-                response = [
+                return [
                     TextContent(type="text", text=f"Object '{res['data']['object_name']}' created successfully"),
                 ]
-                return add_screenshot_if_available(response, screenshot)
             else:
-                response = [
+                return [
                     TextContent(type="text", text=f"Failed to create object: {res['error']}"),
                 ]
-                return add_screenshot_if_available(response, screenshot)
         except Exception as e:
             logger.error(f"Failed to create object: {str(e)}")
             return [
@@ -94,7 +90,7 @@ def register_tools(mcp: FastMCP) -> None:
     @mcp.tool()
     def edit_object(
         ctx: Context, doc_name: str, obj_name: str, obj_properties: dict[str, Any]
-    ) -> list[TextContent | ImageContent]:
+    ) -> list[TextContent]:
         """Edit an object in FreeCAD.
         This tool is used when the `create_object` tool cannot handle the object creation.
 
@@ -104,23 +100,20 @@ def register_tools(mcp: FastMCP) -> None:
             obj_properties: The properties of the object to edit.
 
         Returns:
-            A message indicating the success or failure of the object editing and a screenshot of the object.
+            A message indicating the success or failure of the object editing.
         """
         freecad = get_freecad_connection()
         try:
             res = freecad.edit_object(doc_name, obj_name, {"Properties": obj_properties})
-            screenshot = freecad.get_active_screenshot()
 
             if res["success"]:
-                response = [
+                return [
                     TextContent(type="text", text=f"Object '{res['data']['object_name']}' edited successfully"),
                 ]
-                return add_screenshot_if_available(response, screenshot)
             else:
-                response = [
+                return [
                     TextContent(type="text", text=f"Failed to edit object: {res['error']}"),
                 ]
-                return add_screenshot_if_available(response, screenshot)
         except Exception as e:
             logger.error(f"Failed to edit object: {str(e)}")
             return [
@@ -128,7 +121,7 @@ def register_tools(mcp: FastMCP) -> None:
             ]
 
     @mcp.tool()
-    def delete_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextContent | ImageContent]:
+    def delete_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextContent]:
         """Delete an object in FreeCAD.
 
         Args:
@@ -136,23 +129,20 @@ def register_tools(mcp: FastMCP) -> None:
             obj_name: The name of the object to delete.
 
         Returns:
-            A message indicating the success or failure of the object deletion and a screenshot of the object.
+            A message indicating the success or failure of the object deletion.
         """
         freecad = get_freecad_connection()
         try:
             res = freecad.delete_object(doc_name, obj_name)
-            screenshot = freecad.get_active_screenshot()
 
             if res["success"]:
-                response = [
+                return [
                     TextContent(type="text", text=f"Object '{res['data']['object_name']}' deleted successfully"),
                 ]
-                return add_screenshot_if_available(response, screenshot)
             else:
-                response = [
+                return [
                     TextContent(type="text", text=f"Failed to delete object: {res['error']}"),
                 ]
-                return add_screenshot_if_available(response, screenshot)
         except Exception as e:
             logger.error(f"Failed to delete object: {str(e)}")
             return [
@@ -160,7 +150,7 @@ def register_tools(mcp: FastMCP) -> None:
             ]
 
     @mcp.tool()
-    def get_objects(ctx: Context, doc_name: str) -> list[TextContent | ImageContent]:
+    def get_objects(ctx: Context, doc_name: str) -> list[TextContent]:
         """Get all objects in a document.
         You can use this tool to get the objects in a document to see what you can check or edit.
 
@@ -168,17 +158,15 @@ def register_tools(mcp: FastMCP) -> None:
             doc_name: The name of the document to get the objects from.
 
         Returns:
-            A list of objects in the document and a screenshot of the document.
+            A list of objects in the document.
         """
         freecad = get_freecad_connection()
         try:
             res = freecad.get_objects(doc_name)
-            screenshot = freecad.get_active_screenshot()
             if res["success"]:
-                response = [
+                return [
                     TextContent(type="text", text=json.dumps(res["data"])),
                 ]
-                return add_screenshot_if_available(response, screenshot)
             else:
                 return [
                     TextContent(type="text", text=f"Failed to get objects: {res['error']}")
@@ -190,7 +178,7 @@ def register_tools(mcp: FastMCP) -> None:
             ]
 
     @mcp.tool()
-    def get_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextContent | ImageContent]:
+    def get_object(ctx: Context, doc_name: str, obj_name: str) -> list[TextContent]:
         """Get an object from a document.
         You can use this tool to get the properties of an object to see what you can check or edit.
 
@@ -199,17 +187,15 @@ def register_tools(mcp: FastMCP) -> None:
             obj_name: The name of the object to get.
 
         Returns:
-            The object and a screenshot of the object.
+            The object properties.
         """
         freecad = get_freecad_connection()
         try:
             res = freecad.get_object(doc_name, obj_name)
-            screenshot = freecad.get_active_screenshot()
             if res["success"]:
-                response = [
+                return [
                     TextContent(type="text", text=json.dumps(res["data"])),
                 ]
-                return add_screenshot_if_available(response, screenshot)
             else:
                 return [
                     TextContent(type="text", text=f"Failed to get object: {res['error']}")

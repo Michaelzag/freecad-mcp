@@ -4,31 +4,32 @@ import FreeCAD
 import FreeCADGui
 
 
-def save_active_screenshot(save_path: str, view_name: str = "Isometric", width: int | None = None, height: int | None = None, focus_object: str | None = None):
+DEFAULT_SCREENSHOT_WIDTH = 800
+DEFAULT_SCREENSHOT_HEIGHT = 600
+
+_VIEW_SETTERS = {
+    "Isometric": "viewIsometric",
+    "Front": "viewFront",
+    "Top": "viewTop",
+    "Right": "viewRight",
+    "Back": "viewBack",
+    "Left": "viewLeft",
+    "Bottom": "viewBottom",
+    "Dimetric": "viewDimetric",
+    "Trimetric": "viewTrimetric",
+}
+
+
+def save_active_screenshot(save_path: str, view_name: str = "Current", width: int | None = None, height: int | None = None, focus_object: str | None = None):
     try:
         view = FreeCADGui.ActiveDocument.ActiveView
         if not hasattr(view, 'saveImage'):
             return "Current view does not support screenshots"
 
-        if view_name == "Isometric":
-            view.viewIsometric()
-        elif view_name == "Front":
-            view.viewFront()
-        elif view_name == "Top":
-            view.viewTop()
-        elif view_name == "Right":
-            view.viewRight()
-        elif view_name == "Back":
-            view.viewBack()
-        elif view_name == "Left":
-            view.viewLeft()
-        elif view_name == "Bottom":
-            view.viewBottom()
-        elif view_name == "Dimetric":
-            view.viewDimetric()
-        elif view_name == "Trimetric":
-            view.viewTrimetric()
-        else:
+        setter = _VIEW_SETTERS.get(view_name)
+        if setter:
+            getattr(view, setter)()
+        elif view_name != "Current":
             raise ValueError(f"Invalid view name: {view_name}")
 
         if focus_object:
@@ -43,10 +44,9 @@ def save_active_screenshot(save_path: str, view_name: str = "Isometric", width: 
         else:
             view.fitAll()
 
-        if width is not None and height is not None:
-            view.saveImage(save_path, width, height)
-        else:
-            view.saveImage(save_path)
+        w = width or DEFAULT_SCREENSHOT_WIDTH
+        h = height or DEFAULT_SCREENSHOT_HEIGHT
+        view.saveImage(save_path, w, h)
         return True
     except Exception as e:
         return str(e)

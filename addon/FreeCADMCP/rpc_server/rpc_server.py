@@ -28,7 +28,16 @@ from .ops.sketch_ops import (
     add_sketch_geometry_gui,
     create_sketch_gui,
     get_sketch_diagnostics_gui,
+    get_sketch_info_gui,
     recompute_document_gui,
+)
+from .ops.partdesign_ops import (
+    chamfer_gui,
+    fillet_gui,
+    get_body_features_gui,
+    pad_gui,
+    pocket_gui,
+    revolve_gui,
 )
 from .ops.view_ops import save_active_screenshot
 from .parts_library import get_parts_list, insert_part_from_library
@@ -342,8 +351,64 @@ class FreeCADRPC:
             return {"success": True, "data": res, "error": None}
         return {"success": False, "data": None, "error": res}
 
+    def get_sketch_info(self, doc_name: str, sketch_name: str) -> dict[str, Any]:
+        rpc_request_queue.put(
+            lambda: self._get_sketch_info_gui(doc_name, sketch_name)
+        )
+        res = rpc_response_queue.get()
+        if isinstance(res, dict):
+            return {"success": True, "data": res, "error": None}
+        return {"success": False, "data": None, "error": res}
+
     def recompute_document(self, doc_name: str) -> dict[str, Any]:
         rpc_request_queue.put(lambda: self._recompute_document_gui(doc_name))
+        res = rpc_response_queue.get()
+        if isinstance(res, dict):
+            return {"success": True, "data": res, "error": None}
+        return {"success": False, "data": None, "error": res}
+
+    def pad(self, doc_name: str, body_name: str, sketch_name: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        opts = params or {}
+        rpc_request_queue.put(lambda: pad_gui(doc_name, body_name, sketch_name, **opts))
+        res = rpc_response_queue.get()
+        if isinstance(res, dict):
+            return {"success": True, "data": res, "error": None}
+        return {"success": False, "data": None, "error": res}
+
+    def pocket(self, doc_name: str, body_name: str, sketch_name: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        opts = params or {}
+        rpc_request_queue.put(lambda: pocket_gui(doc_name, body_name, sketch_name, **opts))
+        res = rpc_response_queue.get()
+        if isinstance(res, dict):
+            return {"success": True, "data": res, "error": None}
+        return {"success": False, "data": None, "error": res}
+
+    def revolve(self, doc_name: str, body_name: str, sketch_name: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        opts = params or {}
+        rpc_request_queue.put(lambda: revolve_gui(doc_name, body_name, sketch_name, **opts))
+        res = rpc_response_queue.get()
+        if isinstance(res, dict):
+            return {"success": True, "data": res, "error": None}
+        return {"success": False, "data": None, "error": res}
+
+    def fillet(self, doc_name: str, body_name: str, feature_name: str, edges: list[str], params: dict[str, Any] | None = None) -> dict[str, Any]:
+        opts = params or {}
+        rpc_request_queue.put(lambda: fillet_gui(doc_name, body_name, feature_name, edges, **opts))
+        res = rpc_response_queue.get()
+        if isinstance(res, dict):
+            return {"success": True, "data": res, "error": None}
+        return {"success": False, "data": None, "error": res}
+
+    def chamfer(self, doc_name: str, body_name: str, feature_name: str, edges: list[str], params: dict[str, Any] | None = None) -> dict[str, Any]:
+        opts = params or {}
+        rpc_request_queue.put(lambda: chamfer_gui(doc_name, body_name, feature_name, edges, **opts))
+        res = rpc_response_queue.get()
+        if isinstance(res, dict):
+            return {"success": True, "data": res, "error": None}
+        return {"success": False, "data": None, "error": res}
+
+    def get_body_features(self, doc_name: str, body_name: str) -> dict[str, Any]:
+        rpc_request_queue.put(lambda: get_body_features_gui(doc_name, body_name))
         res = rpc_response_queue.get()
         if isinstance(res, dict):
             return {"success": True, "data": res, "error": None}
@@ -391,7 +456,7 @@ class FreeCADRPC:
     def get_parts_list(self):
         return {"success": True, "data": get_parts_list(), "error": None}
 
-    def get_active_screenshot(self, view_name: str = "Isometric", width: int | None = None, height: int | None = None, focus_object: str | None = None) -> str | None:
+    def get_active_screenshot(self, view_name: str = "Current", width: int | None = None, height: int | None = None, focus_object: str | None = None) -> str | None:
         """Get a screenshot of the active view.
         
         Returns a base64-encoded string of the screenshot or None if a screenshot
@@ -475,6 +540,9 @@ class FreeCADRPC:
 
     def _get_sketch_diagnostics_gui(self, doc_name: str, sketch_name: str):
         return get_sketch_diagnostics_gui(doc_name, sketch_name)
+
+    def _get_sketch_info_gui(self, doc_name: str, sketch_name: str):
+        return get_sketch_info_gui(doc_name, sketch_name)
 
     def _recompute_document_gui(self, doc_name: str):
         return recompute_document_gui(doc_name)

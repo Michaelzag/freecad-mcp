@@ -7,17 +7,6 @@ from .connection import get_freecad_connection, reset_freecad_connection
 
 logger = logging.getLogger("FreeCADMCPserver")
 
-_only_text_feedback = False
-
-
-def set_only_text_feedback(value: bool) -> None:
-    global _only_text_feedback
-    _only_text_feedback = value
-
-
-def get_only_text_feedback() -> bool:
-    return _only_text_feedback
-
 
 @asynccontextmanager
 async def server_lifespan(_server) -> AsyncIterator[Dict[str, Any]]:
