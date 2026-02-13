@@ -162,7 +162,13 @@ The `--host` value is validated on startup — it must be a valid IPv4/IPv6 addr
 * `get_view`: Get a screenshot of the active view.
 * `get_objects`: Get all objects in a document.
 * `get_object`: Get an object in a document.
+* `list_documents`: Get the list of open documents in FreeCAD.
 * `get_parts_list`: Get the list of parts in the [parts library](https://github.com/FreeCAD/FreeCAD-library).
+* `create_sketch`: Create a sketch in a document on a support plane/object.
+* `add_sketch_geometry`: Add sketch geometry (line/circle/arc/point/polyline).
+* `add_sketch_constraint`: Add sketch constraints with typed references.
+* `get_sketch_diagnostics`: Get sketch DoF/conflict/redundancy/open-profile diagnostics.
+* `recompute_document`: Recompute a FreeCAD document and return status.
 
 ## Contributors
 

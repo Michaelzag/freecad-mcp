@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "freecad": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/home/michael/projects/freecad-mcp",
+        "run",
+        "freecad-mcp"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+	"mcpServers": {
+		"freecad": {
+			"command": "uv",
+			"args": [
+				"--directory",
+				"/home/michael/projects/freecad-mcp",
+				"run",
+				"freecad-mcp"
+			],
+			"alwaysAllow": [
+				"list_documents",
+				"create_document",
+				"create_object",
+				"edit_object",
+				"delete_object",
+				"get_view",
+				"insert_part_from_library",
+				"get_objects",
+				"get_object",
+				"get_parts_list",
+				"recompute_document",
+				"get_sketch_diagnostics",
+				"add_sketch_constraint",
+				"add_sketch_geometry",
+				"create_sketch"
+			],
+			"disabledTools": [
+				"execute_code"
+			]
+		}
+	}
+}

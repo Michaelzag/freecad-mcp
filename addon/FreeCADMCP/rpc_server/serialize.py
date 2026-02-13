@@ -2,6 +2,8 @@ import FreeCAD as App
 
 
 def serialize_value(value):
+    color_type = getattr(App, "Color", None)
+
     if isinstance(value, (int, float, str, bool)):
         return value
     elif isinstance(value, App.Vector):
@@ -16,10 +18,10 @@ def serialize_value(value):
             "Base": serialize_value(value.Base),
             "Rotation": serialize_value(value.Rotation),
         }
+    elif color_type is not None and isinstance(value, color_type):
+        return tuple(value)
     elif isinstance(value, (list, tuple)):
         return [serialize_value(v) for v in value]
-    elif isinstance(value, (App.Color)):
-        return tuple(value)
     else:
         return str(value)
 
@@ -27,7 +29,17 @@ def serialize_value(value):
 def serialize_shape(shape):
     if shape is None:
         return None
+    if not getattr(shape, "isValid", lambda: True)():
+        return {
+            "Valid": False,
+            "Volume": None,
+            "Area": None,
+            "VertexCount": 0,
+            "EdgeCount": 0,
+            "FaceCount": 0,
+        }
     return {
+        "Valid": True,
         "Volume": shape.Volume,
         "Area": shape.Area,
         "VertexCount": len(shape.Vertexes),
@@ -39,11 +51,16 @@ def serialize_shape(shape):
 def serialize_view_object(view):
     if view is None:
         return None
-    return {
-        "ShapeColor": serialize_value(view.ShapeColor),
-        "Transparency": view.Transparency,
-        "Visibility": view.Visibility,
-    }
+
+    result = {}
+    for attr in ("ShapeColor", "Transparency", "Visibility"):
+        if hasattr(view, attr):
+            try:
+                result[attr] = serialize_value(getattr(view, attr))
+            except Exception as e:
+                result[attr] = f"<error: {str(e)}>"
+
+    return result
 
 
 def serialize_object(obj):
