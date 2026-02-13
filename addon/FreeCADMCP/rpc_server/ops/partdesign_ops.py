@@ -2,8 +2,6 @@ from typing import Any
 
 import FreeCAD
 
-from ..serialize import serialize_value
-
 
 def pad_gui(
     doc_name: str,
